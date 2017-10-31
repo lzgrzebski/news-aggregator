@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 APP.Main = (function() {
-
+  
   var LAZY_LOAD_THRESHOLD = 300;
   var $ = document.querySelector.bind(document);
-
+  
   var stories = null;
   var storyStart = 0;
   var count = 100;
   var main = $('main');
+  var header = $('header');
+  var storyWrapper = document.querySelector('.story-wrapper');
+  var headerTitles = header.querySelector('.header__title-wrapper');
   var inDetails = false;
   var storyLoadCount = 0;
   var localeData = {
@@ -32,7 +35,7 @@ APP.Main = (function() {
       }
     }
   };
-
+  
   var tmplStory = $('#tmpl-story').textContent;
   var tmplStoryDetails = $('#tmpl-story-details').textContent;
   var tmplStoryDetailsComment = $('#tmpl-story-details-comment').textContent;
@@ -83,10 +86,6 @@ APP.Main = (function() {
 
       }
     }
-
-    // Colorize on complete.
-    if (storyLoadCount === 0)
-      colorizeAndScaleStories();
   }
 
   function onStoryClick(details) {
@@ -121,8 +120,8 @@ APP.Main = (function() {
       storyDetails.setAttribute('id', 'sd-' + details.id);
       storyDetails.classList.add('story-details');
       storyDetails.innerHTML = storyDetailsHtml;
-
-      document.body.appendChild(storyDetails);
+      storyWrapper.innerHTML = '';
+      storyWrapper.appendChild(storyDetails);
 
       commentsElement = storyDetails.querySelector('.js-comments');
       storyHeader = storyDetails.querySelector('.js-header');
@@ -169,42 +168,12 @@ APP.Main = (function() {
     inDetails = true;
 
     var storyDetails = $('#sd-' + id);
-    var left = null;
 
     if (!storyDetails)
       return;
 
     document.body.classList.add('details-active');
-    storyDetails.style.opacity = 1;
-
-    function animate () {
-
-      // Find out where it currently is.
-      var storyDetailsPosition = storyDetails.getBoundingClientRect();
-
-      // Set the left value if we don't have one already.
-      if (left === null)
-        left = storyDetailsPosition.left;
-
-      // Now figure out where it needs to go.
-      left += (0 - storyDetailsPosition.left) * 0.1;
-
-      // Set up the next bit of the animation if there is more to do.
-      if (Math.abs(left) > 0.5)
-        setTimeout(animate, 4);
-      else
-        left = 0;
-
-      // And update the styles. Wait, is this a read-write cycle?
-      // I hope I don't trigger a forced synchronous layout!
-      storyDetails.style.left = left + 'px';
-    }
-
-    // We want slick, right, so let's do a setTimeout
-    // every few milliseconds. That's going to keep
-    // it all tight. Or maybe we're doing visual changes
-    // and they should be in a requestAnimationFrame
-    setTimeout(animate, 4);
+    storyDetails.classList.add('visible');
   }
 
   function hideStory(id) {
@@ -213,96 +182,14 @@ APP.Main = (function() {
       return;
 
     var storyDetails = $('#sd-' + id);
-    var left = 0;
-
     document.body.classList.remove('details-active');
-    storyDetails.style.opacity = 0;
-
-    function animate () {
-
-      // Find out where it currently is.
-      var mainPosition = main.getBoundingClientRect();
-      var storyDetailsPosition = storyDetails.getBoundingClientRect();
-      var target = mainPosition.width + 100;
-
-      // Now figure out where it needs to go.
-      left += (target - storyDetailsPosition.left) * 0.1;
-
-      // Set up the next bit of the animation if there is more to do.
-      if (Math.abs(left - target) > 0.5) {
-        setTimeout(animate, 4);
-      } else {
-        left = target;
-        inDetails = false;
-      }
-
-      // And update the styles. Wait, is this a read-write cycle?
-      // I hope I don't trigger a forced synchronous layout!
-      storyDetails.style.left = left + 'px';
-    }
-
-    // We want slick, right, so let's do a setTimeout
-    // every few milliseconds. That's going to keep
-    // it all tight. Or maybe we're doing visual changes
-    // and they should be in a requestAnimationFrame
-    setTimeout(animate, 4);
+    storyDetails.classList.remove('visible');
   }
-
-  /**
-   * Does this really add anything? Can we do this kind
-   * of work in a cheaper way?
-   */
-  function colorizeAndScaleStories() {
-
-    var storyElements = document.querySelectorAll('.story');
-
-    // It does seem awfully broad to change all the
-    // colors every time!
-    for (var s = 0; s < storyElements.length; s++) {
-
-      var story = storyElements[s];
-      var score = story.querySelector('.story__score');
-      var title = story.querySelector('.story__title');
-
-      // Base the scale on the y position of the score.
-      var height = main.offsetHeight;
-      var mainPosition = main.getBoundingClientRect();
-      var scoreLocation = score.getBoundingClientRect().top -
-          document.body.getBoundingClientRect().top;
-      var scale = Math.min(1, 1 - (0.05 * ((scoreLocation - 170) / height)));
-      var opacity = Math.min(1, 1 - (0.5 * ((scoreLocation - 170) / height)));
-
-      score.style.width = (scale * 40) + 'px';
-      score.style.height = (scale * 40) + 'px';
-      score.style.lineHeight = (scale * 40) + 'px';
-
-      // Now figure out how wide it is and use that to saturate it.
-      scoreLocation = score.getBoundingClientRect();
-      var saturation = (100 * ((scoreLocation.width - 38) / 2));
-
-      score.style.backgroundColor = 'hsl(42, ' + saturation + '%, 50%)';
-      title.style.opacity = opacity;
-    }
-  }
-
-  main.addEventListener('touchstart', function(evt) {
-
-    // I just wanted to test what happens if touchstart
-    // gets canceled. Hope it doesn't block scrolling on mobiles...
-    if (Math.random() > 0.97) {
-      evt.preventDefault();
-    }
-
-  });
 
   main.addEventListener('scroll', function() {
 
-    var header = $('header');
-    var headerTitles = header.querySelector('.header__title-wrapper');
     var scrollTopCapped = Math.min(70, main.scrollTop);
     var scaleString = 'scale(' + (1 - (scrollTopCapped / 300)) + ')';
-
-    colorizeAndScaleStories();
 
     header.style.height = (156 - scrollTopCapped) + 'px';
     headerTitles.style.webkitTransform = scaleString;
@@ -318,7 +205,7 @@ APP.Main = (function() {
     var loadThreshold = (main.scrollHeight - main.offsetHeight -
         LAZY_LOAD_THRESHOLD);
     if (main.scrollTop > loadThreshold)
-      loadStoryBatch();
+      requestAnimationFrame(loadStoryBatch);
   });
 
   function loadStoryBatch() {
@@ -350,6 +237,7 @@ APP.Main = (function() {
     }
 
     storyStart += count;
+    requestAnimationFrame(loadStoryBatch);
 
   }
 

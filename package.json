@@ -1,0 +1,22 @@
+{
+  "name": "news-aggregator",
+  "version": "1.0.0",
+  "description": "**Please note: this code is intended for you to hone your debugging skills. It contains a lot of code that you should not use in production!**",
+  "main": "index.js",
+  "scripts": {
+    "dev": "lite-server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lzgrzebski/news-aggregator.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lzgrzebski/news-aggregator/issues"
+  },
+  "homepage": "https://github.com/lzgrzebski/news-aggregator#readme",
+  "devDependencies": {
+    "lite-server": "^2.3.0"
+  }
+}
